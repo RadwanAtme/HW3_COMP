@@ -1,0 +1,135 @@
+%{
+#include "output.hpp"
+void yyerror(const char*);
+%}
+/* declarations*/
+
+
+
+%right ASSIGN
+%left OR
+%left AND
+%left IS_EQUAL NOT_EQUAL
+%nonassoc BIGGER SMALLER BIGGER_EQUAL SMALLER_EQUAL
+%left ADD MINUS
+%left MUL DIV
+%right NOT
+%left LPAREN RPAREN LBRACE RBRACE 
+%nonassoc VOID INT BYTE B RETURN IF ELSE WHILE BREAK CONTINUE SC COMMA ID NUM STRING BOOL TRUE FALSE CONST
+
+
+
+
+%%
+/* rules */
+
+Program : Funcs {symbol_table->checkMain();scope_list->closeScope();}
+;
+
+Funcs : /*epsilon*/ {}
+		|FuncDecl Funcs {}
+		;
+
+FuncDecl : RetType ID LPAREN Formals RPAREN LBRACE Statements RBRACE {symbol_table->checkDoubleDecleration($3->id);symbol_table->insertFunc($2->id,$1->type,$4->type);}
+;
+
+RetType : Type {$$=$1;}
+		  |VOID {$$=$1;}
+		  ;
+
+Formals: /*epsilon*/ {$$=new FormalList();}|
+		  FormalsList {$$=$1;}
+		  ;
+
+FormalsList : FormalDecl {$$=$1;}
+			| FormalDecl COMMA FormalsList {$$=$1;$$->appendIDAndType($3->types);}
+			;
+
+FormalDecl : TypeAnnotation Type ID 				{$$=new FormalList();$$->appendIDAndType($3->id,$2->type,$1->is_const);}
+;
+
+Statements : Statement 								{}
+			|Statements Statement 					{}
+			;
+
+Statement:  LBRACE 									{scope_list->openWhileScope();} Statements RBRACE {scope_list->closeScope();}
+
+
+			|TypeAnnotation Type ID SC 				{scope_list->checkDoubleDecleration($3->id); 																								checkNotConst($1->is_const,yylineno);symbol_table->insertToSymTable($3->id,$2->type,$1->is_const)}
+
+
+			|TypeAnnotation Type ID ASSIGN Exp SC  {scope_list->checkDoubleDecleration($3->id);checkAssignTypes($2->type, $5->type, 															yylineno);symbol_table->insertToSymTable($3->id,$2->type,$1->is_const)}
+
+
+			|ID ASSIGN Exp SC 						{checkNotConst($1->id,yylineno);checkAssignTypes(																								symbol_table->getElementType($1->id),$3->type,yylineno);}
+			|Call SC 								{}
+			|RETURN SC 								{checkVoidReturnType();}
+			|RETURN Exp SC 							{checkReturnType();}
+			|IF LPAREN Exp 							{checkBoolExp($3->type,yylineno);scope_list->openScope();}  Statement {scope_list->closeScope();}
+			|IF LPAREN Exp 							{checkBoolExp($3->type,yylineno);scope_list->openScope();}  Statement {scope_list->closeScope();} 												ELSE Statement 																														{scope_list->closeScope();}
+			|WHILE LPAREN Exp RPAREN 				{checkBoolExp($3->type,yylineno);scope_list->openWhileScope();} Statement 																	{scope_list->closeScope();}
+			|BREAK SC 							    {scope_list->checkIfWhileScope();}
+			|CONTINUE SC 						    {scope_list->checkIfWhileScope();}
+			;
+
+
+Call : ID LPAREN ExpList RPAREN						{sym_table->checkFunction($1->id,$3->types,yylineno); 																										$$=CallNode();$$->type=symbol_table->getFunRetVal($1->id)}
+		|ID LPAREN RPAREN 							{sym_table->checkFunction($1->id,nullptr,yylineno); 																								$$=CallNode();$$->type=symbol_table->getFunRetVal($1->id)}
+		;
+
+ExpList: Exp 								        {$$=$1;}
+		|Exp COMMA ExpList 						    {$$=$1;$$->appnedVector($3);}
+		;
+
+Type: INT 											{$$ = $1;}
+	| BYTE 											{$$ = $1;}
+	|BOOL 											{$$ = $1;}
+	;
+
+TypeAnnotation: /*epsilon*/ 						{$$=ConstNode(false);}
+				|CONST 								{$$ = $1;}
+				;
+
+Exp: LPAREN Exp RPAREN 								{$$=$2;}
+	|ID 											{$$=$1;}
+	|Call 											{$$=$1;}
+	|NUM 											{$$=$1;}
+	|NUM B 											{$$=$1;}
+	|STRING 										{$$=$1;}
+	|TRUE 											{$$=$1;}
+	|FALSE 											{$$=$1;}
+	|LPAREN Type RPAREN Exp 						{check_cast($2->getType(),$4->getType(),yylineno);$$=$4;$$->type=$2->type;}
+
+	|Exp OR Exp 									{checkInputIsBool($1->getType(),$3->getType(),yylineno);$$=$1;}
+	|Exp AND Exp 									{checkInputIsBool($1->getType(),$3->getType(),yylineno);$$=$1;}
+
+
+	/*Exp RELOP Exp*/
+	|Exp IS_EQUAL Exp 								{checkInputIsNumber($1->getType(),$3->getType(),yylineno);$$=new BoolNode();}
+	|Exp NOT_EQUAL Exp 								{checkInputIsNumber($1->getType(),$3->getType(),yylineno);$$=new BoolNode();}
+	|Exp BIGGER Exp 								{checkInputIsNumber($1->getType(),$3->getType(),yylineno);$$=new BoolNode();}
+	|Exp BIGGER_EQUAL Exp 							{checkInputIsNumber($1->getType(),$3->getType(),yylineno);$$=new BoolNode();}
+	|Exp SMALLER Exp 								{checkInputIsNumber($1->getType(),$3->getType(),yylineno);$$=new BoolNode();}
+	|Exp SMALLER_EQUAL Exp 							{checkInputIsNumber($1->getType(),$3->getType(),yylineno);$$=new BoolNode();}
+
+
+	/*Exp BINOP Exp*/
+	|Exp ADD  Exp 									{checkInputIsNumber($1->getType(),$3->getType(),yylineno);$$ = new 																						NumNode("",getMaxNumbersType($1->getType(),$3->getType()));}
+	|Exp MINUS  Exp 								{checkInputIsNumber($1->getType(),$3->getType(),yylineno);$$ = new 																						NumNode("",getMaxNumbersType($1->tgetType()ype,$3->getType()));}
+	|Exp MUL  Exp								    {checkInputIsNumber($1->getType(),$3->getType(),yylineno);$$ = new 																						NumNode("",getMaxNumbersType($1->getType(),$3->getType()));}
+	|Exp DIV  Exp								    {checkInputIsNumber($1->getType(),$3->getType(),yylineno);$$ = new 																						NumNode("",getMaxNumbersType($1->getType(),$3->getType()));}
+
+	|NOT Exp 										{checkOneInputIsBool($2->getType(),yylineno);$$=$2;}
+	;
+
+INT (int,5)
+
+%%	
+int main(){
+	yyparse();
+}
+
+void yyerror(const char*){ 
+output::errorSyn(yylineno);
+exit(0);
+}	
