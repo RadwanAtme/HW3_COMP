@@ -36,15 +36,31 @@ public:
     bool checkElement(string id);
     bool checkElementType(string id);
 
+    CheckMain
+    checkDoubleDecleration
+    insertFunc(type1,type2,type)
+    getElementType  (/**the type of the last element*/)
+    getFunRetVal
 };
 
 class ScopeList{
     vector<vector<string>> scopes_list;
     vector<int> scopes_offset;
+    vector<int> while_scope;
 public:
     void insert(string id);
     void deleteElement(string id);
     void deleteTopScope();
+
+    void openWhileScope();
+    void openWhileScope();
+    void closeScope(); /**  */
+    checkdoubledecleration /** */
+    checkIFWhileScope
+
+
+
+
 };
 
 class Node{
