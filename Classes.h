@@ -13,63 +13,138 @@ extern int yylineno;
 using std::string;
 using std::vector;
 using std::unordered_map;
+using std::list;
 
 
-struct SymTableCell{
+
+struct SymTableCell {
+    string type;
     string name;
-    int offset;
-    vector<string> type;
+    int offest ;
     bool is_const;
 };
 
 class SymTable{
-    unordered_map<string,vector<SymTableCell>> symbol_table;
-public:
-    void insertToSymTable(string id,string type);
-    void deleteFromSymTable(string id);
-    bool checkElement(string id);
-    bool checkElementType(string id);
+    list<vector<SymTableCell>> Stacktable;
+    vector<int> offsets;
+    unordered_map<string,SymTableCell> All_ids;
 
+public:
+    void insertToSymTable(string id,string type,bool is_const){
+
+    }
+
+    bool CheckMain{
+
+    };
+ bool   checkDoubleDecleration(string id){
+        return All_ids.contains(id);
+    };
+    void insertFunc(type1,type2,type){
+
+    }
+    getElementType  (/**the type of the last element*/)
+    getFunRetVal
+
+    void openScope(){
+        Stacktable.push_back(new vector<SymTableCell>);
+        vector.push_back(vector.back());
+    }
+    bool checkNotConst(string id, yylineno lineno){
+        if(All_ids.contains(id)){
+            return All_ids[id].is_const;
+
+        }
+        output::errorUndef(lineno);
+        exit(-1);
+
+    }
 };
+
+
+class Scope {
+public:
+    vector<SymTableCell> v ;
+    bool Iswhile;
+    Scope(bool is_while = 0): v(vector<SymTableCell>()){
+        Iswhile = is_while;
+    }
+};
+
+
 
 class ScopeList{
-    vector<vector<string>> scopes_list;
+    vector<Scope> scopes_list;
     vector<int> scopes_offset;
+    bool is_while;
+
 public:
-    void insert(string id);
-    void deleteElement(string id);
-    void deleteTopScope();
+
+    void openScope(){
+        scopes_offset.push_back(scopes_offset.back());
+        scopes_list.push_back(Scope());
+    }
+    void closeScope(){
+        scopes_offset.pop();
+        scopes_list.pop();
+
+    }
+    void openWhileScope(){
+        scopes_offset.push_back(scopes_offset.back());
+        scopes_list.push_back(Scope(1));
+        is_while = 1;
+
+    }
+    bool checkIfWhileScope(){
+        return is_while;
+
+    }
+
+    void openFuncScope(string RetType,vector<string> id_list,vector<string> types){
+        SymTableCell s;
+        s.type = RetType;
+        s.name ="func ";
+        s.is_const = 0;
+        s.offest = 0;
+        scopes_list.back().v.push_back(s);
+        scopes_list.puch_back(Scope());
+
+
+        scopes_offset.push_back(scopes_offset.back());
+
+
+
+    }
+
+
+
+
 };
+
+
+
+
+
+
+
+
 
 class Node{
-public:
-    Node()=default;
-};
-
-class TypeNode:public Node{
-public:
-    string type;
-    TypeNode(const string& type):Node(),type(type){}
-};
-
-class ConstNode:public Node{
-public:
-    bool is_const;
-    ConstNode(bool var):Node(),is_const(var){}
-}
-
-class ExpNode:public Node{
-public:
     string id;
-    vector<string> types;
-    Node(const string& id,const string& type):id(id),types(0){
-        types.push_back(type);
-    }
-    string getType(){
-        return types[0];
-    }
+    Types type;
 };
 
 
+class Num:public Node{
+public:
+    int value;
+    Num(const string& id,const string& type,int value):Node(id,type),value(value){}
+};
+
+class Boolean:public Node{
+public:
+    bool value;
+    Boolean(const string& id,const string& type,bool value):Node(id,type),value(value){}
+};
 
 #endif //HW3_OUTPUT_CPP_CLASSES_H
