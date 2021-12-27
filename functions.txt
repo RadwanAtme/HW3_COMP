@@ -1,0 +1,25 @@
+check_cast(type,type,line_number) -> checks if the cast is valid(int to byte and byte to int)
+
+checkInputIsNumber($1->type,$3->type,yylineno) -> checks that the two inputs are of type that is number (maybe NUM,int or byte)
+
+checkOneInputIsBool($2->type,yylineno)
+
+checkInputIsBool($1->type,$3->type,yylineno)
+
+getMaxNumbersType($1->type,$3->type) -> return the tip with the highest range
+
+
+hashTable fields:
+is_const
+hashTable functions:
+checkFunction($1->id,$3->value); checks that function exists and checks if the arguments are valid in terms of types
+
+
+Node fields:
+type 
+value
+
+ExpressionListNode:
+vector<int>
+appnedVector(vector)
+

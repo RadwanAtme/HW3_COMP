@@ -13,46 +13,72 @@ extern int yylineno;
 using std::string;
 using std::vector;
 using std::unordered_map;
+using std::list;
 
+enum Types{
+    INT,
+    BYTE,
+    BOOL,
+    STRING,
+};
 
-struct SymTableCell{
+struct NTO {
+    Types type;
     string name;
-    int offset;
-    vector<string> type;
+    int offest ;
     bool is_const;
 };
 
 class SymTable{
-    unordered_map<string,vector<SymTableCell>> symbol_table;
+    list<vector<NTO>> Stacktable;
+    vector<int> offests;
+
 public:
-    void insertToSymTable(string id,string type);
+    void insertToSymTable(string id,Types type);
     void deleteFromSymTable(string id);
     bool checkElement(string id);
     bool checkElementType(string id);
 
+    CheckMain
+    checkDoubleDecleration
+    insertFunc(type1,type2,type)
+    getElementType  (/**the type of the last element*/)
+    getFunRetVal
+
+    void openScope(){
+        Stacktable.push_back(new vector<NTO>);
+        vector.push_back(vector.back());
+    }
+};
+
+struct Scope {
+    vector<string> v ;
+    bool Iswhile;
 };
 
 class ScopeList{
-    vector<vector<string>> scopes_list;
+    vector<Scope> scopes_list;
     vector<int> scopes_offset;
+
 public:
     void insert(string id);
     void deleteElement(string id);
     void deleteTopScope();
+
+    void openWhileScope();
+    void openWhileScope();
+    void closeScope(); /**  */
+    checkdoubledecleration /** */
+    checkIFWhileScope
+
+
+
+
 };
 
-
 class Node{
-public:
     string id;
-    vector<string> types;
-    Node():id(),types(1,"VOID"){}
-    Node(const string& id,const string& type):id(id),types(0){
-        types.push_back(type);
-    }
-    string getType(){
-        return types[0];
-    }
+    Types type;
 };
 
 
