@@ -23,17 +23,17 @@ LineBreak (\n|\r|\r\n)
 
 
 %%
-void return VOID;
-int return INT;
-byte return BYTE;
-b return B;
+void {yylval=new Node("",VOID); return VOID;}		
+int {yylval=new Node("",INT); return INT;}
+byte {yylval=new Node("",BYTE); return BYTE;}
+b {yylval=new Node("",BYTE); return B;}
 const return CONST;
-bool return BOOL;
+bool {yylval=new Node(string(),BOOL); return BOOL;}
 and return AND;
 or return OR;
 not return NOT;
-true return TRUE;
-false return FALSE;
+true {yylval=new Node("","BOOL",true); return TRUE;}
+false {yylval=new Node("","BOOL",false); return FALSE;}
 return return RETURN;
 if return IF;
 else return ELSE;

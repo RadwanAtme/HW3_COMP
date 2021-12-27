@@ -14,58 +14,45 @@ using std::string;
 using std::vector;
 using std::unordered_map;
 
-enum Types{
-    INT,
-    BYTE,
-    BOOL,
-    STRING,
-};
 
 struct SymTableCell{
     string name;
     int offset;
-    vector<Types> type;
+    vector<string> type;
     bool is_const;
 };
 
 class SymTable{
     unordered_map<string,vector<SymTableCell>> symbol_table;
 public:
-    void insertToSymTable(string id,Types type);
+    void insertToSymTable(string id,string type);
     void deleteFromSymTable(string id);
     bool checkElement(string id);
     bool checkElementType(string id);
 
-    CheckMain
-    checkDoubleDecleration
-    insertFunc(type1,type2,type)
-    getElementType  (/**the type of the last element*/)
-    getFunRetVal
 };
 
 class ScopeList{
     vector<vector<string>> scopes_list;
     vector<int> scopes_offset;
-    vector<int> while_scope;
 public:
     void insert(string id);
     void deleteElement(string id);
     void deleteTopScope();
-
-    void openWhileScope();
-    void openWhileScope();
-    void closeScope(); /**  */
-    checkdoubledecleration /** */
-    checkIFWhileScope
-
-
-
-
 };
 
+
 class Node{
+public:
     string id;
-    Types type;
+    vector<string> types;
+    Node():id(),types(1,"VOID"){}
+    Node(const string& id,const string& type):id(id),types(0){
+        types.push_back(type);
+    }
+    string getType(){
+        return types[0];
+    }
 };
 
 
