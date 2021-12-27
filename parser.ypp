@@ -1,0 +1,137 @@
+%{
+#include "Classes.hpp"
+#include "check_funcs.hpp"
+void yyerror(const char*);
+string exp_type = "";
+%}
+/* declarations*/
+
+
+
+%right ASSIGN
+%left OR
+%left AND
+%left IS_EQUAL NOT_EQUAL
+%nonassoc BIGGER SMALLER BIGGER_EQUAL SMALLER_EQUAL
+%left ADD MINUS
+%left MUL DIV
+%right NOT
+%left LPAREN RPAREN LBRACE RBRACE 
+%nonassoc VOID INT BYTE B RETURN IF ELSE WHILE BREAK CONTINUE SC COMMA ID NUM STRING BOOL TRUE FALSE CONST
+
+
+%%
+/* rules */
+
+Program : Funcs {symbol_table->checkMain();scope_list->closeScope();}
+;
+
+Funcs : /*epsilon*/ {}
+		|FuncDecl Funcs {}
+		;
+
+FuncDecl : RetType ID LPAREN Formals RPAREN {scope_list->openFuncScope(RetType,$4->id_list,$4->type_list,$4->is_const_list);} LBRACE Statements RBRACE {symbol_table->checkDoubleDecleration($2->id);symbol_table->insertFunc($2->id,$1->type,$4->types);delete $2; delete $4;}
+;
+
+RetType : Type {$$=$1;}
+		  |VOID {$$=$1;}
+		  ;
+
+Formals: /*epsilon*/ {$$=new FormalsNode();}|
+		  FormalsList {$$=$1;}
+		  ;
+
+FormalsList : FormalDecl {$$=$1;}
+			| FormalDecl COMMA FormalsList {$$=$1;$$->appendIDAndType($3->id_list,$3->type_list;$3->is_const_list);}
+			;
+
+FormalDecl : TypeAnnotation Type ID 				{$$=new FormalsNode();$$->appendIDAndType($3->id,$2->type,$1->is_const);}
+;
+
+Statements : Statement 								{}
+			|Statements Statement 					{}
+			;
+
+Statement:  LBRACE 									{scope_list->openScope();} Statements RBRACE {scope_list->closeScope();}
+
+
+			|TypeAnnotation Type ID SC 				{scope_list->checkDoubleDecleration($3->id); 																								checkNotConst($1->is_const,yylineno);symbol_table->insertToSymTable($3->id,$2->type,$1->is_const);delete $2;delete $3;}
+
+
+			|TypeAnnotation Type ID ASSIGN Exp SC  {scope_list->checkDoubleDecleration($3->id);check_cast($2->type, $5->getType(), 															yylineno);symbol_table->insertToSymTable($3->id,$2->type,$1->is_const);delete $2;delete $3;delete $4;}
+
+
+			|ID ASSIGN Exp SC 						{symbol_table->checkNotConst($1->id,yylineno);check_cast(																							symbol_table->getElementType($1->id),$3->getType(),yylineno);delete $1;delete $3;}
+			|Call SC 								{}
+			|RETURN SC 								{scope_list->checkVoidReturnType(yylineno);}
+			|RETURN Exp SC 							{scope_list->checkReturnType($2->getType(),yylineno);delete $2;}
+			|IF LPAREN Exp M RPAREN Statement {scope_list->closeScope(); delete $3;}
+			|IF LPAREN Exp M RPAREN Statement ELSE {scope_list->closeScope();scope_list->openScope();} Statement {scope_list->closeScope(); delete $3;}
+			|WHILE LPAREN Exp RPAREN 				{checkOneInputIsBool($3->getType(),yylineno);scope_list->openWhileScope();} Statement 																	{scope_list->closeScope(); delete $3;}
+			|BREAK SC 							    {scope_list->checkIfWhileScope();}
+			|CONTINUE SC 						    {scope_list->checkIfWhileScope();}
+			;
+
+
+M : /*epsilon*/ 	{checkOneInputIsBool(exp_type,yylineno);scope_list->openScope();}
+;
+
+Call : ID LPAREN ExpList RPAREN						{sym_table->checkFunction($1->id,$3->types,yylineno); 																										delete $1;delete $3;}
+		|ID LPAREN RPAREN 							{sym_table->checkFunction($1->id,nullptr,yylineno); 																								delete $1;delete $3;}
+		;
+
+ExpList: Exp 								        {$$=$1;}
+		|Exp COMMA ExpList 						    {$$=$1;$$->appnedVector($3->types);delete $3;}
+		;
+
+Type: INT 											{$$ = $1;}
+	| BYTE 											{$$ = $1;}
+	|BOOL 											{$$ = $1;}
+	;
+
+TypeAnnotation: /*epsilon*/ 						{$$=new ConstNode(false);}
+				|CONST 								{$$ = $1;}
+				;
+
+Exp: LPAREN Exp RPAREN 								{$$=$2; exp_type = $$->getType();}
+	|ID 											{$$=$1;exp_type = $$->getType();}
+	|Call 											{$$=$1;exp_type = $$->getType();}
+	|NUM 											{$$=$1;exp_type = $$->getType();}
+	|NUM B 											{$$=$1;$$->changeType($2->type);delete $2;exp_type = $$->getType();}
+	|STRING 										{$$=$1;exp_type = $$->getType();}
+	|TRUE 											{$$=$1;exp_type = $$->getType();}
+	|FALSE 											{$$=$1;exp_type = $$->getType();}
+	|LPAREN Type RPAREN Exp 						{check_cast($2->getType(),$4->getType(),yylineno);$$=$4;$$->changeType($2->type);delete $2exp_type = $$->getType();;}
+
+	|Exp OR Exp 									{checkInputIsBool($1->getType(),$3->getType(),yylineno);$$=$1;delete $3;exp_type = $$->getType();}
+	|Exp AND Exp 									{checkInputIsBool($1->getType(),$3->getType(),yylineno);$$=$1;delete $3;exp_type = $$->getType();}
+
+
+	/*Exp RELOP Exp*/
+	|Exp IS_EQUAL Exp 							{checkInputIsNumber($1->getType(),$3->getType(),yylineno);$$=new TypeNode("BOOL");delete $1;delete $3;exp_type = $$->getType();}
+	|Exp NOT_EQUAL Exp 							{checkInputIsNumber($1->getType(),$3->getType(),yylineno);$$=new TypeNode("BOOL");delete $1;delete $3;exp_type = $$->getType();}
+	|Exp BIGGER Exp 							{checkInputIsNumber($1->getType(),$3->getType(),yylineno);$$=new TypeNode("BOOL");delete $1;delete $3;exp_type = $$->getType();}
+	|Exp BIGGER_EQUAL Exp 						{checkInputIsNumber($1->getType(),$3->getType(),yylineno);$$=new TypeNode("BOOL");delete $1;delete $3;exp_type = $$->getType();}
+	|Exp SMALLER Exp 							{checkInputIsNumber($1->getType(),$3->getType(),yylineno);$$=new TypeNode("BOOL");delete $1;delete $3;exp_type = $$->getType();}
+	|Exp SMALLER_EQUAL Exp 						{checkInputIsNumber($1->getType(),$3->getType(),yylineno);$$=new TypeNode("BOOL");delete $1;delete $3;exp_type = $$->getType();}
+
+
+	/*Exp BINOP Exp*/
+	|Exp ADD  Exp 								{checkInputIsNumber($1->getType(),$3->getType(),yylineno);$$ = new 																						ExpNode("",getMaxNumbersType($1->getType(),$3->getType()));delete $1;delete $3;exp_type = $$->getType();}
+	|Exp MINUS  Exp 							{checkInputIsNumber($1->getType(),$3->getType(),yylineno);$$ = new 																						ExpNode("",getMaxNumbersType($1->tgetType()ype,$3->getType()));delete $1;delete $3;exp_type = $$->getType();}
+	|Exp MUL  Exp								{checkInputIsNumber($1->getType(),$3->getType(),yylineno);$$ = new 																						ExpNode("",getMaxNumbersType($1->getType(),$3->getType()));delete $1;delete $3;exp_type = $$->getType();}
+	|Exp DIV  Exp								{checkInputIsNumber($1->getType(),$3->getType(),yylineno);$$ = new 																						ExpNode("",getMaxNumbersType($1->getType(),$3->getType()));delete $1;delete $3;exp_type = $$->getType();}
+
+	|NOT Exp 									{checkOneInputIsBool($2->getType(),yylineno);$$=$2;exp_type = $$->getType();}
+	;
+
+
+%%	
+int main(){
+	yyparse();
+}
+
+void yyerror(const char*){ 
+output::errorSyn(yylineno);
+exit(0);
+}	
