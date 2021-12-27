@@ -23,17 +23,17 @@ LineBreak (\n|\r|\r\n)
 
 
 %%
-void {yylval=new Node("",VOID); return VOID;}		
-int {yylval=new Node("",INT); return INT;}
-byte {yylval=new Node("",BYTE); return BYTE;}
-b {yylval=new Node("",BYTE); return B;}
-const return CONST;
-bool {yylval=new Node(string(),BOOL); return BOOL;}
+void 		{yylval=new TypeNode("VOID"); return VOID;}		
+int 		{yylval=new TypeNode("INT"); return INT;}
+byte 		{yylval=new TypeNode("BYTE"); return BYTE;}
+b 			{yylval=new ExpNode("","BYTE"); return B;}
+const 		{yylval=new ConstNode(true); return CONST;}
+bool 		{yylval=new TypeNode("BOOL"); return BOOL;}
 and return AND;
 or return OR;
 not return NOT;
-true {yylval=new Node("","BOOL",true); return TRUE;}
-false {yylval=new Node("","BOOL",false); return FALSE;}
+true 		{yylval=new ExpNode("","BOOL"); return TRUE;}
+false 		{yylval=new ExpNode("","BOOL"); return FALSE;}
 return return RETURN;
 if return IF;
 else return ELSE;
@@ -61,14 +61,12 @@ continue return CONTINUE;
 {Rbrace} return RBRACE;
 {Assign} return ASSIGN;
 
-{Id} return ID;
-{Number} return NUM;
-{String} return STRING;
+{Id} 		{yylval=new ExpNode(yytext,"VOID");  return ID;}
+{Number} 	{yylval=new ExpNode(yytext,"VOID"); return NUM;}
+{String} 	{yylval=new ExpNode(yytext,"STRING"); return STRING;}
 {LineBreak} { };
 [ \t\s]+ /* eat up whitespace */
 \/\/[^\r\n]*[\r|\n|\r\n]? /* eat up comments */
-
-
 
 . output::errorLex(yylineno);exit(0);
 %%
