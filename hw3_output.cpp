@@ -75,7 +75,7 @@ void output::errorUnexpectedBreak(int lineno) {
 }
 
 void output::errorUnexpectedContinue(int lineno) {
-    cout << "line " << lineno << ":" << " unexpected continue statement" << endl;
+    cout << "line " << lineno << ":" << " unexpected continue statement" << endl;	
 }
 
 void output::errorMainMissing() {

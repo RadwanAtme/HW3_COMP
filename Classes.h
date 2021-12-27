@@ -13,85 +13,63 @@ extern int yylineno;
 using std::string;
 using std::vector;
 using std::unordered_map;
-using std::list;
 
-enum Types{
-    INT,
-    BYTE,
-    BOOL,
-    STRING,
-};
 
-struct NTO {
-    Types type;
+struct SymTableCell{
     string name;
-    int offest ;
+    int offset;
+    vector<string> type;
     bool is_const;
 };
 
 class SymTable{
-    list<vector<NTO>> Stacktable;
-    vector<int> offests;
-
+    unordered_map<string,vector<SymTableCell>> symbol_table;
 public:
-    void insertToSymTable(string id,Types type);
+    void insertToSymTable(string id,string type);
     void deleteFromSymTable(string id);
     bool checkElement(string id);
     bool checkElementType(string id);
 
-    CheckMain
-    checkDoubleDecleration
-    insertFunc(type1,type2,type)
-    getElementType  (/**the type of the last element*/)
-    getFunRetVal
-
-    void openScope(){
-        Stacktable.push_back(new vector<NTO>);
-        vector.push_back(vector.back());
-    }
-};
-
-struct Scope {
-    vector<string> v ;
-    bool Iswhile;
 };
 
 class ScopeList{
-    vector<Scope> scopes_list;
+    vector<vector<string>> scopes_list;
     vector<int> scopes_offset;
-
 public:
     void insert(string id);
     void deleteElement(string id);
     void deleteTopScope();
-
-    void openWhileScope();
-    void openWhileScope();
-    void closeScope(); /**  */
-    checkdoubledecleration /** */
-    checkIFWhileScope
-
-
-
-
 };
 
 class Node{
+public:
+    Node()=default;
+};
+
+class TypeNode:public Node{
+public:
+    string type;
+    TypeNode(const string& type):Node(),type(type){}
+};
+
+class ConstNode:public Node{
+public:
+    bool is_const;
+    ConstNode(bool var):Node(),is_const(var){}
+}
+
+class ExpNode:public Node{
+public:
     string id;
-    Types type;
+    vector<string> types;
+    Node(const string& id,const string& type):id(id),types(0){
+        types.push_back(type);
+    }
+    string getType(){
+        return types[0];
+    }
 };
 
 
-class Num:public Node{
-public:
-    int value;
-    Num(const string& id,const string& type,int value):Node(id,type),value(value){}
-};
-
-class Boolean:public Node{
-public:
-    bool value;
-    Boolean(const string& id,const string& type,bool value):Node(id,type),value(value){}
-};
 
 #endif //HW3_OUTPUT_CPP_CLASSES_H
