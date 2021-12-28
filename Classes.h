@@ -14,7 +14,7 @@ using std::string;
 using std::vector;
 using std::unordered_map;
 using std::list;
-
+typedef std::vector<string>::iterator iter_type;
 
 
 struct SymTableCell {
@@ -62,6 +62,11 @@ public:
 };
 
 
+
+
+
+
+
 class Scope {
 public:
     vector<SymTableCell> v ;
@@ -100,19 +105,21 @@ public:
 
     }
 
-    void openFuncScope(string RetType,vector<string> id_list,vector<string> types){
-        SymTableCell s;
-        s.type = RetType;
-        s.name ="func ";
-        s.is_const = 0;
-        s.offest = 0;
-        scopes_list.back().v.push_back(s);
+    void openFuncScope(string RetType,vector<string> id_list,vector<string> types, vector<int> isConst){
         scopes_list.puch_back(Scope());
+        iter_type it = id_list.begin() ;
+        iter_type j = types.begin() ;
+        typedef std::vector<int>::iterator t = isConst.begin();
+        int k =-1;
 
+        for ( ; it != id_list.end() && j != types.end();++it ++j --k ++t){
+            scopes_list.back().v.push_back(SymTableCell(*it, *j, k, *t));
+        }
 
         scopes_offset.push_back(scopes_offset.back());
+    }
 
-
+    ~ScopeList(){
 
     }
 
@@ -123,28 +130,25 @@ public:
 
 
 
-
-
-
-
-
-
-class Node{
+class Node {
     string id;
     Types type;
 };
 
 
-class Num:public Node{
+class Num : public Node {
 public:
     int value;
-    Num(const string& id,const string& type,int value):Node(id,type),value(value){}
+
+    Num(const string &id, const string &type, int value) : Node(id, type), value(value) {}
 };
 
-class Boolean:public Node{
+class Boolean : public Node {
 public:
     bool value;
-    Boolean(const string& id,const string& type,bool value):Node(id,type),value(value){}
+
+    Boolean(const string &id, const string &type, bool value) : Node(id, type), value(value) {}
 };
+
 
 #endif //HW3_OUTPUT_CPP_CLASSES_H
