@@ -51,3 +51,7 @@ void SymTable::checkFunction(string id, vector<string> types, int yylineno) {
         output::errorPrototypeMismatch(yylineno,id,types);
     }
 }
+
+void SymTable::remove(string id) {
+    table.erase(id);
+}

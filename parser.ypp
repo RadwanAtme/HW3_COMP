@@ -23,14 +23,14 @@ string exp_type = "";
 %%
 /* rules */
 
-Program : Funcs {symbol_table->checkMain();delete symbol_table;delete scope_list;}
+Program : Funcs {symbol_table->checkMain();symbol_table->printFuncs();delete symbol_table;delete scope_list;}
 ;
 
 Funcs : /*epsilon*/ {}
 		|FuncDecl Funcs {}
 		;
 
-FuncDecl : RetType ID LPAREN Formals RPAREN {symbol_table->checkDoubleDecleration($2->id,yylineno);scope_list->openFuncScope(RetType,$4->id_list,$4->type_list,$4->is_const_list);} LBRACE Statements RBRACE {symbol_table->insertFunc($2->id,$1->type,$4->types);delete $2; delete $4;}
+FuncDecl : RetType ID LPAREN Formals RPAREN {symbol_table->checkDoubleDecleration($2->id,yylineno);scope_list->openFuncScope(RetType,$4->id_list,$4->type_list,$4->is_const_list);} LBRACE {scope_list->openScope();} Statements RBRACE {symbol_table->insertFunc($2->id,$1->type,$4->types);scope_list->insertFunc($2->id,$1->type,$4->types);scope_list->closeScope(symbol_table);scope_list->closeScope(symbol_table);delete $2; delete $4;}
 ;
 
 RetType : Type {$$=$1;}
@@ -52,22 +52,22 @@ Statements : Statement 								{}
 			|Statements Statement 					{}
 			;
 
-Statement:  LBRACE 									{scope_list->openScope();} Statements RBRACE {scope_list->closeScope();}
+Statement:  LBRACE 									{scope_list->openScope();} Statements RBRACE {scope_list->closeScope(symbol_table);}
 
 
-			|TypeAnnotation Type ID SC 				{symbol_table->checkDoubleDecleration($3->id,yylineno); 																								checkNotConst($1->is_const,yylineno);symbol_table->insertToSymTable($3->id,$2->type,$1->is_const);delete $2;delete $3;}
+			|TypeAnnotation Type ID SC 				{symbol_table->checkDoubleDecleration($3->id,yylineno); 																								checkNotConst($1->is_const,yylineno);symbol_table->insertToSymTable($3->id,$2->type,$1->is_const);scope_list->insertVar($3->id,$2->type); delete $2;delete $3;}
 
 
-			|TypeAnnotation Type ID ASSIGN Exp SC  {symbol_table->checkDoubleDecleration($3->id,yylineno);check_cast($2->type, $5->getType(), 															yylineno);symbol_table->insertToSymTable($3->id,$2->type,$1->is_const);delete $2;delete $3;delete $4;}
+			|TypeAnnotation Type ID ASSIGN Exp SC  {symbol_table->checkDoubleDecleration($3->id,yylineno);check_cast($2->type, $5->getType(), 															yylineno);symbol_table->insertToSymTable($3->id,$2->type,$1->is_const);scope_list->insertVar($3->id,$2->type); delete $2;delete $3;delete $4;}
 
 
 			|ID ASSIGN Exp SC 						{symbol_table->checkElementExists($1->id,yylineno);symbol_table->checkNotConst($1->id,yylineno);check_cast(																							symbol_table->getElementType($1->id),$3->getType(),yylineno);delete $1;delete $3;}
 			|Call SC 								{}
 			|RETURN SC 								{scope_list->checkVoidReturnType(yylineno);}
 			|RETURN Exp SC 							{scope_list->checkReturnType($2->getType(),yylineno);delete $2;}
-			|IF LPAREN Exp M RPAREN Statement {scope_list->closeScope(); delete $3;}
-			|IF LPAREN Exp M RPAREN Statement ELSE {scope_list->closeScope();scope_list->openScope();} Statement {scope_list->closeScope(); delete $3;}
-			|WHILE LPAREN Exp RPAREN 				{checkOneInputIsBool($3->getType(),yylineno);scope_list->openWhileScope();} Statement 																	{scope_list->closeScope(); delete $3;}
+			|IF LPAREN Exp M RPAREN Statement {scope_list->closeScope(symbol_table); delete $3;}
+			|IF LPAREN Exp M RPAREN Statement ELSE {scope_list->closeScope(symbol_table);scope_list->openScope();} Statement {scope_list->closeScope(symbol_table); delete $3;}
+			|WHILE LPAREN Exp RPAREN 				{checkOneInputIsBool($3->getType(),yylineno);scope_list->openWhileScope();} Statement 																	{scope_list->closeScope(symbol_table); delete $3;}
 			|BREAK SC 							    {scope_list->checkIfWhileScope();}
 			|CONTINUE SC 						    {scope_list->checkIfWhileScope();}
 			;
