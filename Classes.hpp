@@ -14,31 +14,100 @@ extern int yylineno;
 using std::string;
 using std::vector;
 using std::unordered_map;
+using std::list;
 
-
-struct SymTableCell{
-    string name;
+struct SymTableCell {
+    string id;
+    string type;
     int offset;
-    vector<string> type;
     bool is_const;
+    vector<string> arg_types;
+    SymTableCell(string id, string ret_type, vector<string> arg_types):id(id),type(ret_type),offset(0),
+                        is_const(false),arg_types(arg_types){
+    }
+    SymTableCell(const SymTableCell& cell):id(cell.id),type(cell.type),offset(cell.offset),
+                    is_const(cell.is_const),arg_types(cell.arg_types){
+
+    }
+    SymTableCell(string id,string type,bool is_const):id(id),type(type),offset(0),
+                        is_const(is_const){
+
+    }
+    ~SymTableCell() = default;
 };
+
+
+
 
 class SymTable{
-    unordered_map<string,vector<SymTableCell>> symbol_table;
+    unordered_map<string,SymTableCell> table;
+
 public:
-    void insertToSymTable(string id,string type);
-    void deleteFromSymTable(string id);
-    bool checkElement(string id);
-    bool checkElementType(string id);
+    void insertToSymTable(string id,string type,bool is_const); // ok
+
+    void checkMain(); // ok
+    void checkDoubleDecleration(string id,int yylineno); // ok
+    void insertFunc(string id,string ret_type,vector<string> arg_types); //ok
+    void checkNotConst(string id,int yylineno); //ok
+    void checkElementExists(string id,int yylineno); // ok
+    string getElementType(string id); //ok
+    void checkFunction(string id,vector<string> types,int yylineno);//ok
+    ~SymTable()=default;
+    SymTable(){
+
+    }
 };
 
-class ScopeList{
-    vector<vector<string>> scopes_list;
-    vector<int> scopes_offset;
+
+class Scope {
 public:
-    void insert(string id);
-    void deleteElement(string id);
-    void deleteTopScope();
+    vector<SymTableCell> v ;
+    bool Iswhile;
+    Scope(bool is_while = 0): v(vector<SymTableCell>()){
+        Iswhile = is_while;
+    }
+};
+
+
+class ScopeList{
+    vector<Scope> scopes_list;
+    vector<int> scopes_offset;
+    bool is_while;
+
+public:
+
+    void openScope(){
+        scopes_offset.push_back(scopes_offset.back());
+        scopes_list.push_back(Scope());
+    }
+    void closeScope(){
+        scopes_offset.pop();
+        scopes_list.pop();
+
+    }
+    void openWhileScope(){
+        scopes_offset.push_back(scopes_offset.back());
+        scopes_list.push_back(Scope(1));
+        is_while = 1;
+
+    }
+    bool checkIfWhileScope(){
+        return is_while;
+
+    }
+
+    void openFuncScope(string RetType,vector<string> id_list,vector<string> types){
+        SymTableCell s;
+        s.type = RetType;
+        s.name ="func ";
+        s.is_const = 0;
+        s.offest = 0;
+        scopes_list.back().v.push_back(s);
+        scopes_list.puch_back(Scope());
+
+
+        scopes_offset.push_back(scopes_offset.back());
+    }
 };
 
 SymTable* symbol_table = new SymTable();
@@ -58,13 +127,13 @@ class ConstNode:public Node{
 public:
     bool is_const;
     ConstNode(bool var):Node(),is_const(var){}
-}
+};
 
 class ExpNode:public Node{
 public:
     string id;
     vector<string> types;
-    Node(const string& id,const string& type):id(id),types(0){
+    Node(const string& id,const string& type):Node(),id(id),types(0){
         types.push_back(type);
     }
     string getType(){
