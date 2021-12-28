@@ -67,48 +67,68 @@ class Scope {
 public:
     vector<SymTableCell> v ;
     bool Iswhile;
-    Scope(bool is_while = 0): v(vector<SymTableCell>()){
+    int num_of_elements;
+    bool is_func;
+    string ret_type;
+    Scope(bool is_while = false): v(0){
         Iswhile = is_while;
+        num_of_elements=0;
     }
 };
-
 
 
 class ScopeList{
     vector<Scope> scopes_list;
     vector<SymTableCell> function_list;
-
+    int offset = 0;
+    bool is_while;
 
 public:
 
     void openScope(){
         scopes_list.push_back(Scope());
     }
-    void closeScope(){
+
+    void closeScope(SymTable table){
+        Scope scope_to_close = scopes_list.back();
+        for(SymTableCell element:scope_to_close.v){
+            table.remove(element.id);
+        }
+        offset -= scope_to_close.num_of_elements;
         scopes_list.pop_back();
-
-
     }
+
     void openWhileScope(){
-        scopes_offset.push_back(scopes_offset.back());
-        scopes_list.push_back(Scope(1));
-    }
-    void checkIfWhileScope(){
+        scopes_list.push_back(Scope(true));
 
     }
 
-    void openFuncScope(string RetType,vector<string> id_list,vector<string> types, vector<int> isConst){
-        scopes_list.push_back(Scope());
-        iter_type it = id_list.begin() ;
-        iter_type j = types.begin() ;
-        typedef std::vector<int>::iterator t = isConst.begin();
-        int k =-1;
-
-        for ( ; it != id_list.end() && j != types.end();++it ++j --k ++t){
-            scopes_list.back().v.push_back(SymTableCell(*it, *j, k, *t));
+    bool checkIfWhileScope(string str,int yylineno){
+        for(auto element:scopes_list){
+            if(element.Iswhile){
+                return true;
+            }
+        }
+        if(str=="break"){
+            output::errorUnexpectedBreak(yylineno);
+        }else{
+            output::errorUnexpectedContinue(yylineno);
         }
 
-        scopes_offset.push_back(scopes_offset.back());
+    }
+
+    void openFuncScope(string RetType,vector<string> id_list,vector<string> types_list, vector<int> is_const_list){
+        Scope scope_to_push = Scope(false);
+        scope_to_push.is_func = true;
+        scope_to_push.ret_type = RetType;
+        int var_offset = id_list.size()*-1;
+        for(unsigned int i=0;i<id_list.size();i++){
+            SymTableCell cell(id_list[i],types_list[i],is_const_list[i]);
+            cell.offset = var_offset;
+            scope_to_push.v.push_back(cell);
+            var_offset++;
+        }
+        this->scopes_list.push_back(scope_to_push);
     }
 
     void insertFunc(string id, string ret_type, vector<string> arg_types){
@@ -122,8 +142,44 @@ public:
             std::cout << func.id << " " << output::makeFunctionType(func.type,func.arg_types) <<  " " << 0 <<  endl;
         }
     }
-    ~ScopeList(){
 
+    void insertVar(string id,string type){
+        SymTableCell cell(id,type,false);
+        cell.offset=this->offset;
+        offset++;
+        scopes_list.back().v.push_back(cell);
+    }
+    ScopeList(){
+        insertFunc("print","VOID",{"STRING"});
+        insertFunc("printi","VOID",{"INT"});
+    }
+    void checkVoidReturnType(int yylineno){
+        for(auto element:scopes_list){
+            if(element.is_func){
+                if(element.ret_type!="VOID"){
+                    output::errorMismatch(yylineno);
+                    exit(-1);
+                }else{
+                    return;
+                }
+            }
+        }
+        output::errorMismatch(yylineno);
+        exit(-1);
+    }
+    void checkReturnType(string type,int yylineno){
+        for(auto element:scopes_list){
+            if(element.is_func){
+                if(element.ret_type!=type){
+                    output::errorMismatch(yylineno);
+                    exit(-1);
+                }else{
+                    return;
+                }
+            }
+        }
+        output::errorMismatch(yylineno);
+        exit(-1);
     }
 };
 

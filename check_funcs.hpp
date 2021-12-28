@@ -13,7 +13,12 @@ bool check_cast(string type1,string type2,int yylineno) {
     return true;
 }
 
-
+void checkByte(string id,int yylineno){
+    if(std::stoi(id)>255){
+        output::errorByteTooLarge(yylineno);
+        exit(-1);
+    }
+}
 bool checkInputIsNumber(string type1,string type2,int yylineno){
 
     if((type1 != "BYTE" && type1!= "INT")){
