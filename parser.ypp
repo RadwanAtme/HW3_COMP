@@ -23,14 +23,14 @@ string exp_type = "";
 %%
 /* rules */
 
-Program : Funcs {symbol_table->checkMain();scope_list->closeScope();}
+Program : Funcs {symbol_table->checkMain();delete symbol_table;delete scope_list;}
 ;
 
 Funcs : /*epsilon*/ {}
 		|FuncDecl Funcs {}
 		;
 
-FuncDecl : RetType ID LPAREN Formals RPAREN {scope_list->openFuncScope(RetType,$4->id_list,$4->type_list,$4->is_const_list);} LBRACE Statements RBRACE {symbol_table->checkDoubleDecleration($2->id);symbol_table->insertFunc($2->id,$1->type,$4->types);delete $2; delete $4;}
+FuncDecl : RetType ID LPAREN Formals RPAREN {symbol_table->checkDoubleDecleration($2->id);scope_list->openFuncScope(RetType,$4->id_list,$4->type_list,$4->is_const_list);} LBRACE Statements RBRACE {symbol_table->insertFunc($2->id,$1->type,$4->types);delete $2; delete $4;}
 ;
 
 RetType : Type {$$=$1;}
