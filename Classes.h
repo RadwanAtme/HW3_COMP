@@ -71,7 +71,8 @@ class Scope {
 public:
     vector<SymTableCell> v ;
     bool Iswhile;
-    Scope(bool is_while = 0): v(vector<SymTableCell>()){
+    bool IsFunc;
+    Scope(bool is_while = 0, bool IsFunc = 0): v(vector<SymTableCell>()){
         Iswhile = is_while;
     }
 };
@@ -86,16 +87,19 @@ class ScopeList{
 public:
 
     void openScope(){
-        scopes_offset.push_back(scopes_offset.back());
+
         scopes_list.push_back(Scope());
     }
-    void closeScope(){
-        scopes_offset.pop();
-        scopes_list.pop();
+    void closeScope(SymTable table){
+        for( auto it::scopes_list){
 
+        }
+
+        table.remove();
+        scopes_list.pop();
     }
     void openWhileScope(){
-        scopes_offset.push_back(scopes_offset.back());
+
         scopes_list.push_back(Scope(1));
         is_while = 1;
 
@@ -106,9 +110,10 @@ public:
     }
 
     void openFuncScope(string RetType,vector<string> id_list,vector<string> types, vector<int> isConst){
+
         scopes_list.puch_back(Scope());
-        iter_type it = id_list.begin() ;
-        iter_type j = types.begin() ;
+        iter_type it = id_list.begin();
+        iter_type j = types.begin();
         typedef std::vector<int>::iterator t = isConst.begin();
         int k =-1;
 
@@ -118,14 +123,26 @@ public:
 
         scopes_offset.push_back(scopes_offset.back());
     }
-
-    ~ScopeList(){
+    void checkVoidReturnType(yylineno y){
 
     }
+    ~ScopeList(){
+        std::vector<Scope>::iterator it;
+          it = scopes_list.begin();
 
 
+        for ( ; it != scopes_list.end(); ++it){
+            std::vector<SymTableCell>::iterator j;
+            j = it->v.begin();
+            for(; j != it->v.end() ; ++j){
+                output::endScope();
+                output::printID(j->id, j->offset, j->type);
 
+            }
 
+        }
+
+    }
 };
 
 
@@ -134,15 +151,12 @@ class Node {
     string id;
     Types type;
 };
-
-
 class Num : public Node {
 public:
     int value;
 
     Num(const string &id, const string &type, int value) : Node(id, type), value(value) {}
 };
-
 class Boolean : public Node {
 public:
     bool value;
