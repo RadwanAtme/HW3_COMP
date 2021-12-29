@@ -61,7 +61,7 @@ continue return CONTINUE;
 {Rbrace} return RBRACE;
 {Assign} return ASSIGN;
 
-{Id} 		{yylval=new ExpNode(yytext,"VOID");  return ID;}
+{Id} 		{yylval=new ExpNode(yytext,"ID");  return ID;}
 {Number} 	{yylval=new ExpNode(yytext,"INT"); return NUM;}
 {String} 	{yylval=new ExpNode(yytext,"STRING"); return STRING;}
 {LineBreak} { };
